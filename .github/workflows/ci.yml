@@ -1,0 +1,30 @@
+# Build it. The harness generates its iceoryx2 dispatch table from iceoryx2.sigs, so nothing
+# here links iceoryx2 and the build needs none of it present.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j
+      - name: It links nothing that listens
+        run: |
+          # A plane has no networking. If h2o or a listening socket ever appears in this
+          # binary, the word "plane" stopped being true and the build should say so.
+          ! ldd build/authority-plane | grep -qiE "h2o|picoquic" || {
+            echo "authority-plane links a transport; a plane has no networking"; exit 1; }
+          ldd build/authority-plane | head -5

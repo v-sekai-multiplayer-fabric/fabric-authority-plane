@@ -32,12 +32,15 @@ That is the whole test, and it is the same one `fabric-zone-domain` applies.
 
 ## State
 
-**Not built.** `src/authority_tick.c` is the tick, carried over unchanged except for losing
-its event loop, and `src/main.cpp` is the loop that replaced it.
+`src/authority_tick.c` is the tick, carried over unchanged except for losing its event loop,
+and `src/main.cpp` is the loop that replaced it. It builds, and CI builds it.
 
-It does not compile yet, and the reason is worth stating rather than working around.
-`gen/rebac.h` and `gen/xr_grid_entity_packet.h` are generated, from `lean-rebac-core` and
-`lean-entity-packet`, and they live in the tree that generates them. Copying them here would
-put one decision in two places, which is exactly the drift `thirdparty/harness` exists to
-prevent. Wiring that generation is the first issue, and until it is done CMake says so
-instead of pretending.
+`gen/` is codegen output — `rebac` from `lean-rebac-core`, the entity packet from
+`lean-entity-packet` — vendored here rather than fetched. A copy can drift from the Lean
+that produced it, and that is the smaller problem: a repository that cannot build without
+cloning another one is a note, not a repository. `gyreplane` vendors the same files the same
+way. Regenerate them, never edit them.
+
+`thirdparty/harness` is a subtree, and nothing links iceoryx2: the dispatch table is
+generated from `iceoryx2.sigs` and dlopens the library at start. CI checks the binary links
+no transport, because that is what the word plane is claiming.
